@@ -5,6 +5,8 @@
 
 
 import numpy as np
+import os
+import sys
 import matplotlib.pyplot as plt
 import scipy
 from scipy import stats
@@ -13,6 +15,7 @@ from scipy.fft import fftfreq, fft
 from sklearn.decomposition import PCA
 import matplotlib.backends.backend_pdf
 import math
+import ast
 
 
 plt.rc('xtick', labelsize=15) 
@@ -21,10 +24,13 @@ plt.rc('axes', labelsize=15)
 
 # # Take the arguments from bash
 input_epi=os.path.abspath(sys.argv[1])
-input_roi=os.path.abspath(sys.argv[2])
-desired_slice=os.path.abspath(sys.argv[3])
-TR=os.path.abspath(sys.argv[4])
+input_roi=sys.argv[2]
+output_path=os.path.abspath(sys.argv[3])
+desired_slice=ast.literal_eval(sys.argv[4])
+TR=ast.literal_eval(sys.argv[5])
 
+if input_roi == 'None':
+    input_roi = None
 
 # # Functions
 
@@ -299,7 +305,7 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
 
 
 def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR):
-    
+
     #load the images, then convert them to arrays
     agar_epi_image = sitk.ReadImage(phantom_epi_filepath)
     agar_epi_full = sitk.GetArrayFromImage(agar_epi_image)

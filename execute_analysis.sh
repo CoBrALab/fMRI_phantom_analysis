@@ -9,4 +9,4 @@ desired_slice=${4:-None}
 TR=$5
 
 #call the python script
-python3.8 phantom_analysis_functions.py $input_epi $input_roi $output_path $desired_slice $TR
+python3.8 ~/fMRI_phantom_analysis/phantom_analysis_functions.py $input_epi $input_roi $output_path $desired_slice $TR
