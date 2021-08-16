@@ -8,26 +8,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 from scipy import stats
-from scipy import optimize
 import SimpleITK as sitk
 from scipy.fft import fftfreq, fft
-from sklearn.decomposition import PCA, FastICA
+from sklearn.decomposition import PCA
 import matplotlib.backends.backend_pdf
 import math
-
-
-# In[2]:
 
 
 plt.rc('xtick', labelsize=15) 
 plt.rc('ytick', labelsize=15) 
 plt.rc('axes', labelsize=15) 
 
+# # Take the arguments from bash
+input_epi=os.path.abspath(sys.argv[1])
+input_roi=os.path.abspath(sys.argv[2])
+desired_slice=os.path.abspath(sys.argv[3])
+TR=os.path.abspath(sys.argv[4])
+
 
 # # Functions
-
-# In[3]:
-
 
 def extract_an_roi(slices, PE_matrix_size, FE_matrix_size):
     #this function creates an one-slice 10x10 roi in the center of the EPI image, if no manually defined ROI is specified
@@ -46,9 +45,6 @@ def extract_an_roi(slices, PE_matrix_size, FE_matrix_size):
             roi_matrix[slice_of_roi, center_of_roi_PE + i, center_of_roi_FE + j] = 1
 
     return roi_matrix
-
-
-# In[4]:
 
 
 def extract_residuals(phantom_epi, roi, time, slices, PE_matrix_size, FE_matrix_size, num_rep):
@@ -87,9 +83,6 @@ def extract_residuals(phantom_epi, roi, time, slices, PE_matrix_size, FE_matrix_
 
     
     return phantom_epi_flat_detrended, predicted, phantom_epi_roi_mean
-
-
-# In[5]:
 
 
 def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, slices, PE_matrix_size, FE_matrix_size, num_rep):
@@ -156,9 +149,6 @@ def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, s
     return fig, signal_image, sfnr_image, static_spatial_noise_im, phantom_epi_flat_detrended
 
 
-# In[6]:
-
-
 def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, static_spatial_noise_im, TR, num_rep):
     residuals_in_roi, predicted_roi, phantom_epi_roi_mean = extract_residuals(phantom_epi, roi, time, 0,0,0, num_rep)
     
@@ -215,9 +205,6 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
     fig0.tight_layout()
     
     return fig0, sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak
-
-
-# In[7]:
 
 
 def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matrix_size, num_rep, TR):
@@ -311,15 +298,17 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
     return fig1, fig2, fig3, fig4, fig5, fig6, fig7
 
 
-# In[8]:
-
-
-def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, slices, 
-                  PE_matrix_size, FE_matrix_size, num_rep, TR):
+def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR):
     
     #load the images, then convert them to arrays
     agar_epi_image = sitk.ReadImage(phantom_epi_filepath)
     agar_epi_full = sitk.GetArrayFromImage(agar_epi_image)
+
+    #extract dimensions
+    num_rep = agar_epi_full.shape[0]
+    slices = agar_epi_full.shape[1]
+    PE_matrix_size = agar_epi_full.shape[2]
+    FE_matrix_size = agar_epi_full.shape[3]
     
     #remove dummy scans from EPI
     num_dummy_scans = int(round(num_rep*0.013))
@@ -368,12 +357,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.close()
 
 
-# # Testing functions
+# # Call the function
 
-# In[9]:
-
-
-full_analysis("./phantom_005/sub-agar005_ses-1_rest_acq-EPI_bold_aftershim.nii.gz",
-              "./phantom_005/roi_agar005_downsampled_square_oneslice_14x14_aftershim.mnc","test_phantom_analysis.pdf",
-              12, 26, 40, 75, 360, 1.0)
+full_analysis(input_epi, input_roi, output_path, desired_slice, TR)
 
