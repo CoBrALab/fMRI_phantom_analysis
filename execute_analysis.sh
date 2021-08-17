@@ -8,5 +8,12 @@ output_path=$3
 desired_slice=${4:-None}
 TR=$5
 
-#call the python script
-python3.8 ~/fMRI_phantom_analysis/phantom_analysis_functions.py $input_epi $input_roi $output_path $desired_slice $TR
+#get the path to the folder where the current script is located
+wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
+case "$0" in
+  /*) scriptdir="${0}";;
+  *) scriptdir="$wdir/${0#./}";;
+esac
+scriptdir="${scriptdir%/*}"
+
+python3.8 $scriptdir/phantom_analysis_functions.py $input_epi $input_roi $output_path $desired_slice $TR
