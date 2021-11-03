@@ -15,7 +15,7 @@ This script performs automated analysis of a timeseries acquired using a phantom
 If no roi.mnc file is provided in the arguments, the script will automatically define a 10x10 ROI in the center-slice of the phantom. When it is doing so, it assumes that the phantom is approximately in the center of the FOV. The summary metrics shown will be for this ROI. If you wish to extract summary metrics from a specific slice/region, then you can draw your own ROI and save it as a minc file. Drawing your own ROI is also useful if you want it to be located in the same spot within the phantom across different sessions. Important: your ROI should only be drawn in a single slice.
 
 ## Run the analysis
-`bash execute_analysis.sh timeseries roi output_filepath slice_to_plot TR `
+`bash execute_analysis.sh timeseries roi output_filepath slice_to_plot TR weisskoff_max_roi_width`
 
 The roi and the slice_to_plot are optional. If not specifying an ROI, and if you don't wish to look at a particular slice, then provide an empty string. 
 * The timeseries should be a nifti file, and should be provided as a string. 
@@ -23,14 +23,15 @@ The roi and the slice_to_plot are optional. If not specifying an ROI, and if you
 * The output_filepath is the path and name of a pdf file where the outputs will be stored. Provide as a string.
 * The slice_to_plot is an integer slice value. 
 * The TR is a float (in seconds). 
+* The weisskoff_max_roi_width is an integer representing the number of maximum number of pixels used during Weisskoff analysis (default is 20). If the phantom is small, it may be necessary to specify a smaller number of pixels as the default ROI may extend past the phantom - this will be visible in the plot titled 'ROI locations in Weisskoff Analysis'.
 
 Example with an ROI and slice_to_plot provided:
 
-`bash execute_analysis.sh "phantom_timeseries_4D.nii.gz" "roi_3D.mnc" "/home/phantom_analysis_results.pdf" 12 1.0`
+`bash execute_analysis.sh "phantom_timeseries_4D.nii.gz" "roi_3D.mnc" "/home/phantom_analysis_results.pdf" 12 1.0 15`
 
-Example with no ROI and slice_to_plot provided:
+Example with no ROI, no slice_to_plot and no weisskoff_max_roi_width provided:
 
-`bash execute_analysis.sh "phantom_timeseries_4D.nii.gz" "" "/home/phantom_analysis_results.pdf" "" 1.0`
+`bash execute_analysis.sh "phantom_timeseries_4D.nii.gz" "" "/home/phantom_analysis_results.pdf" "" 1.0 ""` 
 
 ## Outputs
 The script outputs a single pdf file, where each page contains a figure with the analysis results.
