@@ -33,6 +33,25 @@ weisskoff_max_roi_width=ast.literal_eval(sys.argv[6])
 if input_roi == 'None':
     input_roi = None
 
+print(input_epi)
+print(type(input_epi))
+
+print(output_path)
+print(type(output_path))
+
+print(TR)
+print(type(TR))
+
+print(input_roi)
+print(type(input_roi))
+
+print(desired_slice)
+print(type(desired_slice))
+
+print(weisskoff_max_roi_width)
+print(type(weisskoff_max_roi_width))
+
+
 # # Functions
 
 def extract_an_roi(slices, PE_matrix_size, FE_matrix_size, width):
