@@ -33,25 +33,6 @@ weisskoff_max_roi_width=ast.literal_eval(sys.argv[6])
 if input_roi == 'None':
     input_roi = None
 
-print(input_epi)
-print(type(input_epi))
-
-print(output_path)
-print(type(output_path))
-
-print(TR)
-print(type(TR))
-
-print(input_roi)
-print(type(input_roi))
-
-print(desired_slice)
-print(type(desired_slice))
-
-print(weisskoff_max_roi_width)
-print(type(weisskoff_max_roi_width))
-
-
 # # Functions
 
 def extract_an_roi(slices, PE_matrix_size, FE_matrix_size, width):
@@ -472,7 +453,6 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.savefig(figure_pca_space4, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space5, bbox_inches="tight")
     pdf_multiplot.close()
-
 
 
 # # Call the function

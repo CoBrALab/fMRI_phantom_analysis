@@ -145,6 +145,8 @@ assign_positional_args 1 "${_positionals[@]}"
 
 ################################################################# ACTUAL SCRIPT #################################################
 source activate phantom_analysis
+set -euo pipefail
+IFS=$'\n\t'
 
 #get the path to the folder where the current script is located
 wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
@@ -153,13 +155,6 @@ case "$0" in
   *) scriptdir="$wdir/${0#./}";;
 esac
 scriptdir="${scriptdir%/*}"
-
-echo $_arg_input_epi
-echo $_arg_output_path
-echo $_arg_repetition_time
-echo $_arg_input_roi
-echo $_arg_desired_slice
-echo $_arg_weisskoff_max_roi_width
 
 python3.8 $scriptdir/phantom_analysis_functions.py $_arg_input_epi $_arg_output_path $_arg_repetition_time $_arg_input_roi $_arg_desired_slice $_arg_weisskoff_max_roi_width
 
