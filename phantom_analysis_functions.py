@@ -465,7 +465,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
 
     #define a time array that corresponds with EPI (without dummy scans)
     rep_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
-    
+    time_arr = np.divide(rep_arr, TR)
 
     #if there is no manually drawn roi provided, extract a 10x10, one-slice roi from the middle slice
     if roi_filepath is None:
