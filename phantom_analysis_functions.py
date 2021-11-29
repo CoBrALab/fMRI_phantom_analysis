@@ -16,6 +16,7 @@ from sklearn.decomposition import PCA
 import matplotlib.backends.backend_pdf
 import math
 import ast
+from skimage.filters import threshold_li
 
 
 plt.rc('xtick', labelsize=15)
@@ -241,6 +242,61 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
 
     return fig0, sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak
 
+def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy):
+    
+    #create a mask around the phantom
+    threshold_for_binarizing = threshold_li(phantom_epi.flatten())
+    mask_per_time = phantom_epi > threshold_for_binarizing
+    phantom_mask = np.mean(mask_per_time, axis = 0) > 0   
+    nophantom_mask = np.mean(mask_per_time, axis = 0) == 0
+    
+    #shift the phantom mask to create a mask for the Nyquist ghost
+    pixel_shift = round(PE_matrix_size/2) #N/2 ghosts are shifted by N/2 pixels
+    phantom_mask_rolled = np.roll(phantom_mask, pixel_shift, axis=1)
+    ghost_mask_tmp = np.subtract(phantom_mask_rolled.astype(int), phantom_mask.astype(int))>0
+    ghost_mask = ghost_mask_tmp.astype(int)
+    
+    #finally, create a mask for the background (no ghosts or phantom)
+    nobackground_mask = phantom_mask.astype(int) + ghost_mask
+    background_mask = 1 - nobackground_mask
+    background_mask_eroded = scipy.ndimage.morphology.binary_erosion(background_mask, iterations = 3, border_value = 1)
+    
+    #apply masks at each timepoint
+    mean_ghosting_per_rep = np.zeros(num_rep_no_dummy)
+    ratio_ghosting_per_rep = np.zeros(num_rep_no_dummy)
+    for i in range(0, num_rep_no_dummy):
+        epi_ghosting_image = np.multiply(phantom_epi[i,:,:,:], ghost_mask)
+        epi_background_image = np.multiply(phantom_epi[i,:,:,:], background_mask_eroded)
+        ratio_ghosting_per_rep[i] = np.divide(epi_ghosting_image[epi_ghosting_image != 0.00].mean(), 
+                                              epi_background_image[epi_background_image != 0.00].mean())
+    
+    fig1, axs = plt.subplots(1, 4, figsize = (18,4))
+    
+    plot = axs[0].plot(time_arr, ratio_ghosting_per_rep)
+    axs[0].set_xlabel('Repetition (#)')
+    axs[0].set_ylabel('Ratio of ghost to background intensities')
+    axs[0].set_title('Ghosting Level across time')
+    
+    toplot = phantom_epi[100, 13,:,:] + 500*ghost_mask[13,:,:]
+    im2 = axs[1].imshow(toplot, origin = 'lower')
+    axs[1].set_title('Ghost Mask Location', fontsize = 20)
+    axs[1].axis('off')
+
+    im1 = axs[2].imshow(epi_ghosting_image[13,:,:], origin = 'lower')
+    cbar = plt.colorbar(im1, ax = axs[2], orientation = 'vertical', shrink = 0.6, fraction = 0.1, pad = 0.01)
+    axs[2].set_title('Ghosting image', fontsize = 20)
+    axs[2].axis('off')
+    
+    im2 = axs[3].imshow(epi_background_image[13,:,:], origin = 'lower')
+    cbar = plt.colorbar(im2, ax = axs[3], orientation = 'vertical', shrink = 0.6, fraction = 0.1, pad = 0.01)
+    axs[3].set_title('Background image', fontsize = 20)
+    axs[3].axis('off')
+    
+    plt.show()
+  
+    
+    return fig1
+
 def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size, num_rep_no_dummy, max_roi_width):
 
     ############################################ calculate SNR0 ########################################33
@@ -408,7 +464,8 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     agar_epi = agar_epi_full[num_dummy_scans:num_rep,:,:,:]
 
     #define a time array that corresponds with EPI (without dummy scans)
-    time_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
+    rep_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
+    
 
     #if there is no manually drawn roi provided, extract a 10x10, one-slice roi from the middle slice
     if roi_filepath is None:
@@ -429,6 +486,9 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     [figure_roi_analysis, sfnr_summary_value, snr, percent_fluc,
      drift_alt, value_of_peak] = roi_residuals_analysis(agar_epi, roi, time_arr, signal_image, sfnr_image,
                                                       static_spatial_noise_im, TR, num_rep)
+    #perform ghosting analysis
+    figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy)
+    
     #perform weisskoff analysis
     [figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
                                                                           FE_matrix_size, num_rep, weisskoff_max_roi_width)
@@ -442,7 +502,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     #export all figures to pdf
     pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath)
     pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
-    pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_roi_positions, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_rdc, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_time, bbox_inches="tight")
