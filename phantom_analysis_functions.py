@@ -16,6 +16,7 @@ from sklearn.decomposition import PCA
 import matplotlib.backends.backend_pdf
 import math
 import ast
+from skimage.filters import threshold_li
 
 
 plt.rc('xtick', labelsize=15)
@@ -150,33 +151,38 @@ def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, s
     if slice_num is None:
         slice_num = slice_to_plot
 
-    fig, axs = plt.subplots(1, 5, figsize = (30,14), sharey = True)
-    fig.suptitle('Whole Phantom Signal Analysis', y = 0.7, fontsize = 20)
+    fig, axs = plt.subplots(1, 5, figsize = (15,7), sharey = True)
+    fig.suptitle('Whole Phantom Signal Analysis', y = 0.7, fontsize = 15)
 
-    axs[0].set_title('Mean Signal Image', fontsize = 20)
+    axs[0].set_title('Mean Signal Image', fontsize = 15)
     s = axs[0].imshow(signal_image[slice_num,:,:], origin = 'lower', vmax = 80, vmin=0)
     cbar = plt.colorbar(s, ax = axs[0], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
+    axs[0].axis('off')
 
-    axs[1].set_title('Temporal Fluctuation Noise Image', fontsize = 20)
+    axs[1].set_title('Temporal Fluctuation Noise Image', fontsize = 15)
     t = axs[1].imshow(temp_fluc_noise_image[slice_num,:,:], origin = 'lower', vmax = 1.5, vmin = 0)
     cbar = plt.colorbar(t, ax = axs[1], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
+    axs[1].axis('off')
 
-    axs[2].set_title('SFNR Image', fontsize = 20)
+    axs[2].set_title('SFNR Image', fontsize = 15)
     sf = axs[2].imshow(sfnr_image[slice_num,:,:], origin = 'lower', vmax = 115, vmin = 0)
     cbar = plt.colorbar(sf, ax = axs[2], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
+    axs[2].axis('off')
 
-    axs[3].set_title('Static Spatial Noise Image', fontsize = 20)
+    axs[3].set_title('Static Spatial Noise Image', fontsize = 15)
     g = axs[3].imshow(static_spatial_noise_im[slice_num,:,:], origin = 'lower', vmax = 70, vmin = -70)
     cbar = plt.colorbar(g, ax = axs[3], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
+    axs[3].axis('off')
 
-    axs[4].set_title('Location of ROI', fontsize = 20)
+    axs[4].set_title('Location of ROI', fontsize = 15)
     roi_ontop_of_signal = 500*roi_to_plot + signal_image
     r = axs[4].imshow(roi_ontop_of_signal[slice_to_plot,:,:], origin = 'lower')
     cbar = plt.colorbar(r, ax = axs[4], orientation = 'horizontal')
+    axs[4].axis('off')
 
     fig.tight_layout()
 
@@ -211,43 +217,99 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
     (osm, osr),(slope, intercept, r) = stats.probplot(residuals_in_roi)
 
     ##################################### PLOT ##################################################################
-    fig0, axs = plt.subplots(1, 5, figsize = (30,8))
-    fig0.suptitle('Analysis of Residuals within an ROI', y = 1, fontsize = 20)
-    axs[0].set_title('Polynomial Fit (ROI average)', fontsize=20)
+    fig0, axs = plt.subplots(1, 5, figsize = (15,4))
+    fig0.suptitle('Analysis of Residuals within an ROI', y = 1, fontsize = 15)
+    axs[0].set_title('Polynomial Fit (ROI average)', fontsize = 15)
     axs[0].plot(time, phantom_epi_roi_mean)
     axs[0].plot(time, predicted_roi)
-    axs[0].set_xlabel('Time (s)', fontsize=20)
-    axs[0].set_ylabel('Signal Intensity', fontsize=20)
-    axs[1].set_title('Residuals', fontsize=20)
+    axs[0].set_xlabel('Time (s)', fontsize = 15)
+    axs[0].set_ylabel('Signal Intensity', fontsize = 15)
+    axs[1].set_title('Residuals', fontsize = 15)
     axs[1].plot(time, residuals_in_roi)
-    axs[1].set_xlabel('Time (s)', fontsize=20)
-    axs[1].set_ylabel('Signal Intensity', fontsize=20)
-    axs[2].set_title('FFT Spectrum', fontsize=20)
+    axs[1].set_xlabel('Time (s)', fontsize = 15)
+    axs[1].set_ylabel('Signal Intensity', fontsize = 15)
+    axs[2].set_title('FFT Spectrum', fontsize = 15)
     axs[2].plot(xf, np.abs(yf[1:(N+1)//2]))
-    axs[2].set_xlabel('Frequency (Hz)', fontsize=20)
-    axs[2].set_ylabel('FFT Magnitude', fontsize=20)
-    axs[3].set_title('Histogram of Residuals', fontsize=20)
+    axs[2].set_xlabel('Frequency (Hz)', fontsize = 15)
+    axs[2].set_ylabel('FFT Magnitude', fontsize = 15)
+    axs[3].set_title('Histogram of Residuals', fontsize = 15)
     axs[3].hist(residuals_in_roi, bins = 30)
-    axs[3].set_xlabel('Residual intensity', fontsize=20)
-    axs[3].set_ylabel('Frequency', fontsize=20)
+    axs[3].set_xlabel('Residual intensity', fontsize = 15)
+    axs[3].set_ylabel('Frequency', fontsize = 15)
     stats.probplot(residuals_in_roi, plot=axs[4])
-    fig0.text(0,-0.1, "The strongest frequency in the FFT spectrum is: " + str(value_of_peak[0][0]) + ' Hz', fontsize = 20)
-    fig0.text(0,-0.2, "The drift (inside roi) is: " + str(drift_alt), fontsize = 20)
-    fig0.text(0,-0.3, "The percent fluctuation (inside roi) is: " + str(percent_fluc), fontsize = 20)
-    fig0.text(0,-0.4, "The SFNR summary value (inside roi) is: " + str(sfnr_summary_value), fontsize = 20)
-    fig0.text(0,-0.5, "The SNR summary value (inside roi) is: " + str(snr), fontsize = 20)
-    fig0.text(0,-0.6,'QQ Correlation of residuals: '+str(r), fontsize = 20)
+    fig0.text(0,-0.1, "The strongest frequency in the FFT spectrum is: " + str(value_of_peak[0][0]) + ' Hz', fontsize = 15)
+    fig0.text(0,-0.2, "The drift (inside roi) is: " + str(drift_alt), fontsize = 15)
+    fig0.text(0,-0.3, "The percent fluctuation (inside roi) is: " + str(percent_fluc), fontsize = 15)
+    fig0.text(0,-0.4, "The SFNR summary value (inside roi) is: " + str(sfnr_summary_value), fontsize = 15)
+    fig0.text(0,-0.5, "The SNR summary value (inside roi) is: " + str(snr), fontsize = 15)
+    fig0.text(0,-0.6,'QQ Correlation of residuals: '+str(r), fontsize = 15)
     fig0.tight_layout()
 
     return fig0, sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak
 
-def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size, num_rep_no_dummy, max_roi_width):
+def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy):
+    
+    #create a mask around the phantom
+    threshold_for_binarizing = threshold_li(phantom_epi.flatten())
+    mask_per_time = phantom_epi > threshold_for_binarizing
+    phantom_mask = np.mean(mask_per_time, axis = 0) > 0   
+    nophantom_mask = np.mean(mask_per_time, axis = 0) == 0
+    
+    #shift the phantom mask to create a mask for the Nyquist ghost
+    pixel_shift = round(PE_matrix_size/2) #N/2 ghosts are shifted by N/2 pixels
+    phantom_mask_rolled = np.roll(phantom_mask, pixel_shift, axis=1)
+    ghost_mask_tmp = np.subtract(phantom_mask_rolled.astype(int), phantom_mask.astype(int))>0
+    ghost_mask = ghost_mask_tmp.astype(int)
+    
+    #finally, create a mask for the background (no ghosts or phantom)
+    nobackground_mask = phantom_mask.astype(int) + ghost_mask
+    background_mask = 1 - nobackground_mask
+    background_mask_eroded = scipy.ndimage.morphology.binary_erosion(background_mask, iterations = 3, border_value = 1)
+    
+    #apply masks at each timepoint
+    mean_ghosting_per_rep = np.zeros(num_rep_no_dummy)
+    ratio_ghosting_per_rep = np.zeros(num_rep_no_dummy)
+    for i in range(0, num_rep_no_dummy):
+        epi_ghosting_image = np.multiply(phantom_epi[i,:,:,:], ghost_mask)
+        epi_background_image = np.multiply(phantom_epi[i,:,:,:], background_mask_eroded)
+        ratio_ghosting_per_rep[i] = np.divide(epi_ghosting_image[epi_ghosting_image != 0.00].mean(), 
+                                              epi_background_image[epi_background_image != 0.00].mean())
+    
+    fig1, axs = plt.subplots(1, 4, figsize = (15,4))
+    fig1.suptitle('Analysis of Ghosting Levels', y = 1, fontsize = 15)
+    plot = axs[0].plot(time_arr, ratio_ghosting_per_rep)
+    axs[0].set_xlabel('Repetition (#)')
+    axs[0].set_ylabel('Ghost to Background Intensities')
+    axs[0].set_title('Ghosting Level across time')
+    
+    toplot = phantom_epi[100, 13,:,:] + 500*ghost_mask[13,:,:]
+    im1 = axs[1].imshow(toplot, origin = 'lower')
+    cbar = plt.colorbar(im1, ax = axs[1], orientation = 'horizontal')
+    axs[1].set_title('Ghost Mask Location', fontsize = 15)
+    axs[1].axis('off')
 
+    im2 = axs[2].imshow(epi_ghosting_image[13,:,:], origin = 'lower')
+    cbar = plt.colorbar(im2, ax = axs[2], orientation = 'horizontal')
+    cbar.set_label('Intensity (a.u.)')
+    axs[2].set_title('Ghosting image', fontsize = 15)
+    axs[2].axis('off')
+    
+    im3 = axs[3].imshow(epi_background_image[13,:,:], origin = 'lower')
+    cbar = plt.colorbar(im3, ax = axs[3], orientation = 'horizontal')
+    cbar.set_label('Intensity (a.u.)')
+    axs[3].set_title('Background image', fontsize = 15)
+    axs[3].axis('off')
+  
+    
+    return fig1
+
+def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size, num_rep_no_dummy, max_roi_width):
+    
     ############################################ calculate SNR0 ########################################33
     #extract equal ROIs in background and center
     background_roi = extract_an_roi_background(slices, PE_matrix_size, FE_matrix_size, 15)
     center_roi = extract_an_roi(slices, PE_matrix_size, FE_matrix_size, 15)
-
+    
     #extract the average timeseries in each roi
     tmp, tmp, tmp, spatial_std_background = extract_residuals(phantom_epi, background_roi, time, slices,
                                                                              PE_matrix_size, FE_matrix_size)
@@ -256,46 +318,50 @@ def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size
     #calculate SNR0
     SNR0 = np.mean(spatial_mean_center)/(1.53*np.mean(spatial_std_background))
     expected_deviation_of_one_pixel = 100/SNR0
-
+    
     ######################################### Find CV across ROI widths ###################################
     cv_of_mean_timeseries = np.zeros(max_roi_width)
-
+    
     #plot the location of all the rois (to check that they make sense and don't go outside phantom)
-    fig1, axs = plt.subplots(1, max_roi_width, figsize = (30, 14))
-    fig1.suptitle('ROI Locations for Weisskoff analysis', fontsize = 20)
-
+    num_rows_in_fig = int(max_roi_width/5)
+    fig1, axs = plt.subplots(num_rows_in_fig, 5, figsize = (15, 7))
+    fig1.suptitle('ROI Locations for Weisskoff analysis', fontsize = 15)
+    
     #iterate over various roi widths
     for roi_width in range(1,max_roi_width+1):
         #create rois of various sizes, plot each one
         new_roi = extract_an_roi(slices, PE_matrix_size, FE_matrix_size, roi_width)
         image_to_plot = 100*(new_roi[int(slices/2), :, :] + background_roi[int(slices/2), :, :])+ np.mean(phantom_epi, axis = 0)[int(slices/2),:,:]
-        axs[roi_width-1].imshow(image_to_plot, origin='lower')
-        axs[roi_width-1].axis('off')
-
+        current_row = int((roi_width-1)/5)
+        current_col = np.mod(roi_width-1, 5)
+        axs[current_row, current_col].imshow(image_to_plot, origin='lower')
+        axs[current_row, current_col].axis('off')
+        axs[current_row, current_col].set_title(roi_width, fontsize = 15)
+        
         #within each roi, extract the mean timeseries (both detrended and non-detrended)
-        epi_mean_detrended_timeseries_in_roi,tmp, epi_mean_timeseries_in_roi, tmp = extract_residuals(phantom_epi, new_roi,
+        epi_mean_detrended_timeseries_in_roi,tmp, epi_mean_timeseries_in_roi, tmp = extract_residuals(phantom_epi, new_roi, 
                                                                                                        time, slices,
-                                                                                                       PE_matrix_size,
+                                                                                                       PE_matrix_size, 
                                                                                                        FE_matrix_size)
         cv_of_mean_timeseries[roi_width-1] = np.std(epi_mean_detrended_timeseries_in_roi)/np.mean(epi_mean_timeseries_in_roi)
     fig1.tight_layout()
-
+    
     ############################### Compute 'radius of decorrelation' ####################
-    rdc = expected_deviation_of_one_pixel/(100*cv_of_mean_timeseries[max_roi_width-1])
-
-    fig2 = plt.figure(figsize = (30,10))
+    rdc = expected_deviation_of_one_pixel/(100*cv_of_mean_timeseries[max_roi_width-1])    
+        
+    fig2 = plt.figure(figsize = (15,7))
     roi_widths_arr = np.arange(1,max_roi_width+1)
     theoretical = expected_deviation_of_one_pixel/roi_widths_arr
     plt.plot(roi_widths_arr, 100*cv_of_mean_timeseries, 'o', label = 'Measured')
     plt.plot(roi_widths_arr, theoretical, label = 'Theoretical')
     plt.xscale('log')
     plt.yscale('log')
-    plt.title('Weisskoff Analysis', fontsize = 20)
-    plt.xlabel('ROI width (# of voxels)', fontsize = 20)
-    plt.ylabel('Coefficient of variation', fontsize = 20)
-    fig2.text(0,-0.2, "Radius of decorrelation: " + str(round(rdc,2)) + ' pixels', fontsize = 20)
-    fig2.legend(fontsize = 20)
-
+    plt.title('Weisskoff Analysis', fontsize = 15)
+    plt.xlabel('ROI width (# of voxels)', fontsize = 15)
+    plt.ylabel('Coefficient of variation', fontsize = 15)
+    fig2.text(0,-0.2, "Radius of decorrelation: " + str(round(rdc,2)) + ' pixels', fontsize = 15)
+    fig2.legend(fontsize = 15)
+    
     return fig1, fig2
 
 
@@ -309,23 +375,23 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
     num_components = len(pc_exp_var)
     xf = scipy.fft.fftfreq(num_rep, TR)[1:(num_rep+1)//2]
 
-    fig1, axs = plt.subplots(2, 6, figsize = (30,14))
-    fig1.suptitle('Temporal PCA Across All (Detrended) Voxels', fontsize = 20)
+    fig1, axs = plt.subplots(2, 6, figsize = (15,7))
+    fig1.suptitle('Temporal PCA Across All (Detrended) Voxels', fontsize = 15)
 
     for i in range(0,6):
         #plot timecourses of each pc_time_sliceselectdir in first row
         axs[0,i].plot(time, pc_time[i,:])
-        axs[0,i].set_title('Component ' + str(i) + (' (') + str(round(pc_exp_var[i],2)) + ('%)'), fontsize = 20)
-        axs[0,i].set_xlabel('Time (s)', fontsize = 20)
-        axs[0,0].set_ylabel('Amplitude (a.u.)', fontsize = 20)
+        axs[0,i].set_title('Component ' + str(i) + (' (') + str(round(pc_exp_var[i],2)) + ('%)'), fontsize = 15)
+        axs[0,i].set_xlabel('Time (s)', fontsize = 15)
+        axs[0,0].set_ylabel('Amplitude (a.u.)', fontsize = 15)
 
         #plot fourier transform of each pc_time in second row
         axs[1,i].plot(xf, np.abs(scipy.fft.fft(pc_time[i,:])[1:(num_rep+1)//2]))
-        axs[1,i].set_xlabel('Frequency (Hz)', fontsize = 20)
-        axs[1,0].set_ylabel('Amplitude (a.u.)', fontsize = 20)
+        axs[1,i].set_xlabel('Frequency (Hz)', fontsize = 15)
+        axs[1,0].set_ylabel('Amplitude (a.u.)', fontsize = 15)
     fig1.tight_layout()
 
-    #################################### Plot the spatial pattern of the first 3 components ############################
+    #################################### Plot the spatial pattern of the first 5 components ############################
 
     #reshape the 1d array into the original image dimensions
     pc_space_im = pc_space.reshape(slices,PE_matrix_size, FE_matrix_size,num_components)
@@ -334,21 +400,21 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
     root = np.sqrt(slices)+1
     subplot_dim1 = math.ceil(root)
     subplot_dim2 = math.ceil(slices/subplot_dim1)
-    fig_dim1 = 30
-    fig_dim2 = 14
+    fig_dim1 = 15
+    fig_dim2 = 7
 
     fig2, axs2 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig2.suptitle('Spatial Pattern of PC 0', fontsize = 20)
+    fig2.suptitle('Spatial Pattern of PC 0', fontsize = 12)
     fig3, axs3 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig3.suptitle('Spatial Pattern of PC 1', fontsize = 20)
+    fig3.suptitle('Spatial Pattern of PC 1', fontsize = 12)
     fig4, axs4 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig4.suptitle('Spatial Pattern of PC 2', fontsize = 20)
+    fig4.suptitle('Spatial Pattern of PC 2', fontsize = 12)
     fig5, axs5 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig5.suptitle('Spatial Pattern of PC 3', fontsize = 20)
+    fig5.suptitle('Spatial Pattern of PC 3', fontsize = 12)
     fig6, axs6 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig6.suptitle('Spatial Pattern of PC 4', fontsize = 20)
+    fig6.suptitle('Spatial Pattern of PC 4', fontsize = 12)
     fig7, axs7 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig7.suptitle('Spatial Pattern of PC 5', fontsize = 20)
+    fig7.suptitle('Spatial Pattern of PC 5', fontsize = 12)
 
 
     slice_num = 0
@@ -361,22 +427,28 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
                 break
 
             im2 = axs2[j,k].imshow(pc_space_im[slice_num,:,:,0], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs2[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs2[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs2[j,k].axis('off')
 
             im3 = axs3[j,k].imshow(pc_space_im[slice_num,:,:,1], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs3[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs3[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs3[j,k].axis('off')
 
             im4 = axs4[j,k].imshow(pc_space_im[slice_num,:,:,2], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs4[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs4[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs4[j,k].axis('off')
 
             im5 = axs5[j,k].imshow(pc_space_im[slice_num,:,:,3], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs5[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs5[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs5[j,k].axis('off')
 
             im6 = axs6[j,k].imshow(pc_space_im[slice_num,:,:,4], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs6[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs6[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs6[j,k].axis('off')
 
             im7 = axs7[j,k].imshow(pc_space_im[slice_num,:,:,5], vmax = max_val, vmin = min_val, origin = 'lower')
-            axs7[j,k].set_title('Slice #' + str(slice_num), fontsize = 20)
+            axs7[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
+            axs7[j,k].axis('off')
 
             slice_num = slice_num + 1
     cbar1 = fig2.colorbar(im2, ax = axs2, orientation = 'horizontal')
@@ -408,7 +480,8 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     agar_epi = agar_epi_full[num_dummy_scans:num_rep,:,:,:]
 
     #define a time array that corresponds with EPI (without dummy scans)
-    time_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
+    rep_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
+    time_arr = np.divide(rep_arr, TR)
 
     #if there is no manually drawn roi provided, extract a 10x10, one-slice roi from the middle slice
     if roi_filepath is None:
@@ -429,6 +502,9 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     [figure_roi_analysis, sfnr_summary_value, snr, percent_fluc,
      drift_alt, value_of_peak] = roi_residuals_analysis(agar_epi, roi, time_arr, signal_image, sfnr_image,
                                                       static_spatial_noise_im, TR, num_rep)
+    #perform ghosting analysis
+    figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy)
+    
     #perform weisskoff analysis
     [figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
                                                                           FE_matrix_size, num_rep, weisskoff_max_roi_width)
@@ -443,6 +519,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath)
     pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
     pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_roi_positions, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_rdc, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_time, bbox_inches="tight")
