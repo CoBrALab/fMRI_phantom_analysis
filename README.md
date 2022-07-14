@@ -25,7 +25,7 @@ Below are described the --help outputs from the command line interface
 Usage: execute_analysis.sh [--repetition_time <arg>] [--input_roi <arg>] [--desired_slice <arg>] [--weisskoff_max_roi_width <arg>] [-h|--help] <input_epi> <output_path>
        
         <input_epi>: The phantom fMRI timeseries, as a 4D nifti.
-        <output_path>: Path for where the output pdf report will be saved.
+        --output_path: Prefix to the pdf and csv output files. Must not already exist. (default: './fMRI_stability_report')
         --repetition_time: The acquisition TR, in seconds. (default: '1.0')
         --input_roi: A manually drawn single-slice ROI, as a 3D nifti. A 10x10 ROI in the center slice is used by default. (default: 'None')
         --desired_slice: The slice to be plotted in the report, as an integer. Center slice is computed and used by default. (default: 'None')
@@ -36,11 +36,11 @@ Usage: execute_analysis.sh [--repetition_time <arg>] [--input_roi <arg>] [--desi
 
 No options:
 
-`bash execute_analysis.sh phantom_timeseries_4D.nii.gz /home/phantom_analysis_results.pdf`
+`bash execute_analysis.sh phantom_timeseries_4D.nii.gz`
 
 With options:
 
-`bash execute_analysis.sh phantom_timeseries_4D.nii.gz /home/phantom_analysis_results.pdf --repetition_time 1.5 --input_roi phantom_custom_roi_3D.nii.gz --desired_slice 30 --weisskoff_max_roi_width 40`
+`bash execute_analysis.sh phantom_timeseries_4D.nii.gz --output_path /home/phantom_analysis_results --repetition_time 1.5 --input_roi phantom_custom_roi_3D.nii.gz --desired_slice 30 --weisskoff_max_roi_width 40`
 
 
 ## Guidance for choosing the options
