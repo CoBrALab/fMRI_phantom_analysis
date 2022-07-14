@@ -516,7 +516,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
                                                                            PE_matrix_size, FE_matrix_size, num_rep, TR)
 
     #export all figures to pdf
-    pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath)
+    pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath + ".pdf")
     pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
     pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
     pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
