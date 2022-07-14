@@ -17,6 +17,7 @@ import matplotlib.backends.backend_pdf
 import math
 import ast
 from skimage.filters import threshold_li
+import csv
 
 
 plt.rc('xtick', labelsize=15)
@@ -530,6 +531,14 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.savefig(figure_pca_space4, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space5, bbox_inches="tight")
     pdf_multiplot.close()
+
+    #export metrics to csv file
+    csv_header = ["SFNR summary value", "SNR summary value", "Percent fluctuation", "Drift"]
+    csv_metrics = [sfnr_summary_value, snr, percent_fluc, drift_alt]
+    with open(output_filepath + ".csv", 'w', newline="") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(csv_header)
+        csv_writer.writerow(csv_metrics)
 
 
 # # Call the function
