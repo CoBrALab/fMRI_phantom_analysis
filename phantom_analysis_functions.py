@@ -17,6 +17,7 @@ import matplotlib.backends.backend_pdf
 import math
 import ast
 from skimage.filters import threshold_li
+import csv
 
 
 plt.rc('xtick', labelsize=15)
@@ -362,7 +363,7 @@ def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size
     fig2.text(0,-0.2, "Radius of decorrelation: " + str(round(rdc,2)) + ' pixels', fontsize = 15)
     fig2.legend(fontsize = 15)
     
-    return fig1, fig2
+    return rdc, fig1, fig2
 
 
 def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matrix_size, num_rep, TR):
@@ -506,7 +507,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy)
     
     #perform weisskoff analysis
-    [figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
+    [rdc, figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
                                                                           FE_matrix_size, num_rep, weisskoff_max_roi_width)
 
     #also perform PCA
@@ -516,7 +517,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
                                                                            PE_matrix_size, FE_matrix_size, num_rep, TR)
 
     #export all figures to pdf
-    pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath)
+    pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath + ".pdf")
     pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
     pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
     pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
@@ -530,6 +531,14 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.savefig(figure_pca_space4, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space5, bbox_inches="tight")
     pdf_multiplot.close()
+
+    #export metrics to csv file
+    csv_header = ["SFNR summary value", "SNR summary value", "Percent fluctuation", "Drift", "Peak Fourier frequency", "Weisskoff radius of decorrelation"]
+    csv_metrics = [sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak[0][0], rdc]
+    with open(output_filepath + ".csv", 'w', newline="") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(csv_header)
+        csv_writer.writerow(csv_metrics)
 
 
 # # Call the function
