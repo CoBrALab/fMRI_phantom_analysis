@@ -18,6 +18,7 @@ import math
 import ast
 from skimage.filters import threshold_li
 import csv
+import pandas as pd
 
 
 plt.rc('xtick', labelsize=15)
@@ -31,10 +32,13 @@ TR=ast.literal_eval(sys.argv[3])
 input_roi=sys.argv[4]
 desired_slice=ast.literal_eval(sys.argv[5])
 weisskoff_max_roi_width=ast.literal_eval(sys.argv[6])
+longitudinal_csv=os.path.abspath(sys.argv[7])
 
 if input_roi == 'None':
     input_roi = None
-
+if longitudinal_csv == 'None':
+    longitudinal_csv = None
+    
 # # Functions
 
 def extract_an_roi(slices, PE_matrix_size, FE_matrix_size, width):
@@ -462,8 +466,51 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
 
     return fig1, fig2, fig3, fig4, fig5, fig6, fig7
 
+def export_csv(csv_metrics, output_filepath, longitudinal_csv):
+    
+    #define header
+    csv_header = ["SFNR summary value", "SNR summary value", "Percent fluctuation", "Drift", "Peak Fourier frequency",
+                   "Weisskoff radius of decorrelation"]
+        
+    #create a clean csv with just this session's data
+    with open(output_filepath + ".csv", 'w', newline="") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(csv_header)
+        csv_writer.writerow(csv_metrics)
+            
+    #if a longitudinal csv is provided, append to that one
+    if longitudinal_csv is not None:
+        
+        #read provided csv
+        longitudinal_df = pd.read_csv(longitudinal_csv)
+        
+        #check that the provided csv has the proper headings - if not, raise error
+        if longitudinal_df.axes[1].values.tolist() != csv_header:
+             raise ValueError(f""" The provided longitudinal_csv does not have the correct format. Please provide a csv
+             outputed by this script from a previous session with no modifications. """)
+                
+        #append the new metrics from the current session to the df
+        longitudinal_df.loc[len(longitudinal_df)] = csv_metrics
+        
+        #convert_to_csv
+        num_ses = len(longitudinal_df)
+        longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv")
+                               
+    #plot the results across sessions
+    fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
+    fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
 
-def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width):
+    for i in range(0, len(csv_header)):                           
+        axs[i].set_title(csv_header[i], fontsize = 15)
+        axs[i].plot(longitudinal_df[csv_header[i]], 'o-')
+        axs[i].set_xlabel('Session number', fontsize = 15)
+        axs[i].set_title(csv_header[i], fontsize = 15)
+    fig.tight_layout()
+    
+    return fig
+
+def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width,
+                 longitudinal_csv):
 
     #load the images, then convert them to arrays
     agar_epi_image = sitk.ReadImage(phantom_epi_filepath)
@@ -515,6 +562,10 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
      figure_pca_space1, figure_pca_space2,
     figure_pca_space3, figure_pca_space4,figure_pca_space5] = pca_analysis(agar_epi_flat_detrended, time_arr, slices,
                                                                            PE_matrix_size, FE_matrix_size, num_rep, TR)
+       
+    #export csv
+    csv_metrics = [sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak[0][0], rdc]
+    figure_longitudinal_metrics = export_csv(csv_metrics, output_filepath, longitudinal_csv)
 
     #export all figures to pdf
     pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath + ".pdf")
@@ -530,17 +581,11 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_roi_positions, bbox_inches="tight")
     pdf_multiplot.savefig(figure_weisskoff_rdc, bbox_inches="tight")
+    if longitudinal_csv is not None:
+        pdf_multiplot.savefig(figure_longitudinal_metrics, bbox_inches="tight")
     pdf_multiplot.close()
-
-    #export metrics to csv file
-    csv_header = ["SFNR summary value", "SNR summary value", "Percent fluctuation", "Drift", "Peak Fourier frequency", "Weisskoff radius of decorrelation"]
-    csv_metrics = [sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak[0][0], rdc]
-    with open(output_filepath + ".csv", 'w', newline="") as csv_file:
-        csv_writer = csv.writer(csv_file)
-        csv_writer.writerow(csv_header)
-        csv_writer.writerow(csv_metrics)
 
 
 # # Call the function
 
-full_analysis(input_epi, input_roi, output_path, desired_slice, TR, weisskoff_max_roi_width)
+full_analysis(input_epi, input_roi, output_path, desired_slice, TR, weisskoff_max_roi_width, longitudinal_csv)
