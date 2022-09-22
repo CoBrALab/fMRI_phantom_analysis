@@ -153,27 +153,27 @@ def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, s
         slice_num = slice_to_plot
 
     fig, axs = plt.subplots(1, 5, figsize = (15,7), sharey = True)
-    fig.suptitle('Whole Phantom Signal Analysis', y = 0.7, fontsize = 15)
+    fig.suptitle('Standard Stability Metrics - voxelwise', y = 0.7, fontsize = 15)
 
-    axs[0].set_title('Mean Signal Image', fontsize = 15)
+    axs[0].set_title('Mean Signal Map', fontsize = 15)
     s = axs[0].imshow(signal_image[slice_num,:,:], origin = 'lower', vmax = 80, vmin=0)
     cbar = plt.colorbar(s, ax = axs[0], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
     axs[0].axis('off')
 
-    axs[1].set_title('Temporal Fluctuation Noise Image', fontsize = 15)
+    axs[1].set_title('Standard Deviation Map', fontsize = 15)
     t = axs[1].imshow(temp_fluc_noise_image[slice_num,:,:], origin = 'lower', vmax = 1.5, vmin = 0)
     cbar = plt.colorbar(t, ax = axs[1], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
     axs[1].axis('off')
 
-    axs[2].set_title('SFNR Image', fontsize = 15)
+    axs[2].set_title('tSNR Map', fontsize = 15)
     sf = axs[2].imshow(sfnr_image[slice_num,:,:], origin = 'lower', vmax = 115, vmin = 0)
     cbar = plt.colorbar(sf, ax = axs[2], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
     axs[2].axis('off')
 
-    axs[3].set_title('Static Spatial Noise Image', fontsize = 15)
+    axs[3].set_title('Static Spatial Noise Map', fontsize = 15)
     g = axs[3].imshow(static_spatial_noise_im[slice_num,:,:], origin = 'lower', vmax = 70, vmin = -70)
     cbar = plt.colorbar(g, ax = axs[3], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
@@ -219,7 +219,7 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
 
     ##################################### PLOT ##################################################################
     fig0, axs = plt.subplots(1, 5, figsize = (15,4))
-    fig0.suptitle('Analysis of Residuals within an ROI', y = 1, fontsize = 15)
+    fig0.suptitle('Standard Stability Metrics - Average within ROI', y = 1, fontsize = 15)
     axs[0].set_title('Polynomial Fit (ROI average)', fontsize = 15)
     axs[0].plot(time, phantom_epi_roi_mean)
     axs[0].plot(time, predicted_roi)
@@ -277,7 +277,7 @@ def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy):
                                               epi_background_image[epi_background_image != 0.00].mean())
     
     fig1, axs = plt.subplots(1, 4, figsize = (15,4))
-    fig1.suptitle('Analysis of Ghosting Levels', y = 1, fontsize = 15)
+    fig1.suptitle('Ghosting Analysis', y = 1, fontsize = 15)
     plot = axs[0].plot(time_arr, ratio_ghosting_per_rep)
     axs[0].set_xlabel('Repetition (#)')
     axs[0].set_ylabel('Ghost to Background Intensities')
@@ -377,7 +377,7 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
     xf = scipy.fft.fftfreq(num_rep, TR)[1:(num_rep+1)//2]
 
     fig1, axs = plt.subplots(2, 6, figsize = (15,7))
-    fig1.suptitle('Temporal PCA Across All (Detrended) Voxels', fontsize = 15)
+    fig1.suptitle('Principal Component Analysis - timecourse and FT of top 6 PCs', fontsize = 15)
 
     for i in range(0,6):
         #plot timecourses of each pc_time_sliceselectdir in first row
@@ -518,11 +518,6 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
 
     #export all figures to pdf
     pdf_multiplot = matplotlib.backends.backend_pdf.PdfPages(output_filepath + ".pdf")
-    pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
-    pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
-    pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
-    pdf_multiplot.savefig(figure_weisskoff_roi_positions, bbox_inches="tight")
-    pdf_multiplot.savefig(figure_weisskoff_rdc, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_time, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space0, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space1, bbox_inches="tight")
@@ -530,6 +525,11 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     pdf_multiplot.savefig(figure_pca_space3, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space4, bbox_inches="tight")
     pdf_multiplot.savefig(figure_pca_space5, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_ghosting_analysis, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_voxelwise_wholephantom, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_roi_analysis, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_weisskoff_roi_positions, bbox_inches="tight")
+    pdf_multiplot.savefig(figure_weisskoff_rdc, bbox_inches="tight")
     pdf_multiplot.close()
 
     #export metrics to csv file
