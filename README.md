@@ -40,7 +40,7 @@ No options:
 
 With options:
 
-`bash execute_analysis.sh phantom_timeseries_4D.nii.gz --output_path /home/phantom_analysis_results --repetition_time 1.5 --input_roi phantom_custom_roi_3D.nii.gz --desired_slice 30 --weisskoff_max_roi_width 40`
+`bash execute_analysis.sh phantom_timeseries_4D.nii.gz --output_path /home/phantom_analysis_results_August --repetition_time 1.5 --input_roi phantom_custom_roi_3D.nii.gz --desired_slice 30 --weisskoff_max_roi_width 40 --longitudinal_csv /home/phantom_analysis_results_July/fMRI_stability_report.csv`
 
 
 ## Guidance for choosing the options
