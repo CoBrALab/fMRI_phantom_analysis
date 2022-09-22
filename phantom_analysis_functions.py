@@ -36,7 +36,7 @@ longitudinal_csv=os.path.abspath(sys.argv[7])
 
 if input_roi == 'None':
     input_roi = None
-if longitudinal_csv == 'None':
+if 'None' in longitudinal_csv:
     longitudinal_csv = None
     
 # # Functions
@@ -496,18 +496,18 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
         num_ses = len(longitudinal_df)
         longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv")
                                
-    #plot the results across sessions
-    fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
-    fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
+        #plot the results across sessions
+        fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
+        fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
 
-    for i in range(0, len(csv_header)):                           
-        axs[i].set_title(csv_header[i], fontsize = 15)
-        axs[i].plot(longitudinal_df[csv_header[i]], 'o-')
-        axs[i].set_xlabel('Session number', fontsize = 15)
-        axs[i].set_title(csv_header[i], fontsize = 15)
-    fig.tight_layout()
-    
-    return fig
+        for i in range(0, len(csv_header)):                           
+            axs[i].set_title(csv_header[i], fontsize = 15)
+            axs[i].plot(longitudinal_df[csv_header[i]], 'o-')
+            axs[i].set_xlabel('Session number', fontsize = 15)
+            axs[i].set_title(csv_header[i], fontsize = 15)
+        fig.tight_layout()
+
+        return fig
 
 def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width,
                  longitudinal_csv):
