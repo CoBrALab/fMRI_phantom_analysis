@@ -22,14 +22,14 @@ It is recommended to run the phantom analysis on both the raw phantom timeseries
 ## The command line interface
 Below are described the --help outputs from the command line interface
 ```
-Usage: execute_analysis.sh [--repetition_time <arg>] [--input_roi <arg>] [--desired_slice <arg>] [--weisskoff_max_roi_width <arg>] [-h|--help] <input_epi> <output_path>
-       
+Usage: execute_analysis.sh [--output_path <arg>] [--repetition_time <arg>] [--input_roi <arg>] [--desired_slice <arg>] [--weisskoff_max_roi_width <arg>] [--longitudinal_csv <arg>] [-h|--help] <input_epi>
         <input_epi>: The phantom fMRI timeseries, as a 4D nifti.
         --output_path: Prefix to the pdf and csv output files. Must not already exist. (default: './fMRI_stability_report')
         --repetition_time: The acquisition TR, in seconds. (default: '1.0')
         --input_roi: A manually drawn single-slice ROI, as a 3D nifti. A 10x10 ROI in the center slice is used by default. (default: 'None')
         --desired_slice: The slice to be plotted in the report, as an integer. Center slice is computed and used by default. (default: 'None')
         --weisskoff_max_roi_width: The width of the largest ROI that is analyzed during Weisskoff analysis, in pixels. It should be as large as possible without extending outside the phantom (default: '20')
+        --longitudinal_csv: Csv outputed during previous sessions. The new stability metrics will be appended to this csv, and an additional figure that compares the metrics across sessions will be included in the report. (default: 'None')
         -h, --help: Prints help
 ```
 ## Examples
