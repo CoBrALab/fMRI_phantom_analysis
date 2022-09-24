@@ -493,7 +493,7 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
     if longitudinal_csv is not None:
         
         #read provided csv
-        longitudinal_df = pd.read_csv(longitudinal_csv)
+        longitudinal_df = pd.read_csv(longitudinal_csv).reset_index(drop=True)
         
         #check that the provided csv has the proper headings - if not, raise error
         if longitudinal_df.axes[1].values.tolist() != csv_header:
@@ -505,7 +505,8 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
         
         #convert_to_csv
         num_ses = len(longitudinal_df)
-        longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv")
+        longitudinal_df = longitudinal_df.reset_index(drop=True)
+        longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv", index = False)
                                
         #plot the results across sessions
         fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
