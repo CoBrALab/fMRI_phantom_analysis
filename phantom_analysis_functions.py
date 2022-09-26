@@ -36,7 +36,7 @@ longitudinal_csv=os.path.abspath(sys.argv[7])
 
 if input_roi == 'None':
     input_roi = None
-if longitudinal_csv == 'None':
+if 'None' in longitudinal_csv:
     longitudinal_csv = None
     
 # # Functions
@@ -192,7 +192,7 @@ def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, s
     fig.tight_layout()
 
 
-    return fig, signal_image, sfnr_image, static_spatial_noise_im, phantom_epi_flat_detrended
+    return fig, signal_image, sfnr_image, static_spatial_noise_im, phantom_epi_flat_detrended, slice_num
 
 
 def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, static_spatial_noise_im, TR, num_rep):
@@ -252,7 +252,7 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
 
     return fig0, sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak
 
-def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy):
+def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy, slice_to_plot):
     
     #create a mask around the phantom
     threshold_for_binarizing = threshold_li(phantom_epi.flatten())
@@ -287,19 +287,19 @@ def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy):
     axs[0].set_ylabel('Ghost to Background Intensities')
     axs[0].set_title('Ghosting Level across time')
     
-    toplot = phantom_epi[100, 13,:,:] + 500*ghost_mask[13,:,:]
+    toplot = phantom_epi[int(len(time_arr)/2), slice_to_plot,:,:] + 500*ghost_mask[slice_to_plot,:,:]
     im1 = axs[1].imshow(toplot, origin = 'lower')
     cbar = plt.colorbar(im1, ax = axs[1], orientation = 'horizontal')
     axs[1].set_title('Ghost Mask Location', fontsize = 15)
     axs[1].axis('off')
 
-    im2 = axs[2].imshow(epi_ghosting_image[13,:,:], origin = 'lower')
+    im2 = axs[2].imshow(epi_ghosting_image[slice_to_plot,:,:], origin = 'lower')
     cbar = plt.colorbar(im2, ax = axs[2], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
     axs[2].set_title('Ghosting image', fontsize = 15)
     axs[2].axis('off')
     
-    im3 = axs[3].imshow(epi_background_image[13,:,:], origin = 'lower')
+    im3 = axs[3].imshow(epi_background_image[slice_to_plot,:,:], origin = 'lower')
     cbar = plt.colorbar(im3, ax = axs[3], orientation = 'horizontal')
     cbar.set_label('Intensity (a.u.)')
     axs[3].set_title('Background image', fontsize = 15)
@@ -400,28 +400,35 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
 
     #reshape the 1d array into the original image dimensions
     pc_space_im = pc_space.reshape(slices,PE_matrix_size, FE_matrix_size,num_components)
-
+    
     #decide how many subplots are necessary (based on the number of slices)
     root = np.sqrt(slices)+1
-    subplot_dim1 = math.ceil(root)
+    subplot_dim1 = math.floor(root)
     subplot_dim2 = math.ceil(slices/subplot_dim1)
-    fig_dim1 = 15
-    fig_dim2 = 7
-
+    fig_dim1 = 18
+    fig_dim2 = 11
+    
     fig2, axs2 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig2.suptitle('Spatial Pattern of PC 0', fontsize = 12)
+    fig2.suptitle('Spatial Pattern of PC 0', fontsize = 15)
     fig3, axs3 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig3.suptitle('Spatial Pattern of PC 1', fontsize = 12)
+    fig3.suptitle('Spatial Pattern of PC 1', fontsize = 15)
     fig4, axs4 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig4.suptitle('Spatial Pattern of PC 2', fontsize = 12)
+    fig4.suptitle('Spatial Pattern of PC 2', fontsize = 15)
     fig5, axs5 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig5.suptitle('Spatial Pattern of PC 3', fontsize = 12)
+    fig5.suptitle('Spatial Pattern of PC 3', fontsize = 15)
     fig6, axs6 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig6.suptitle('Spatial Pattern of PC 4', fontsize = 12)
+    fig6.suptitle('Spatial Pattern of PC 4', fontsize = 15)
     fig7, axs7 = plt.subplots(subplot_dim2, subplot_dim1, figsize = (fig_dim1,fig_dim2), sharex = True, sharey = True)
-    fig7.suptitle('Spatial Pattern of PC 5', fontsize = 12)
-
-
+    fig7.suptitle('Spatial Pattern of PC 5', fontsize = 15)
+    
+    if (subplot_dim1 == 1) or (subplot_dim2 == 1):
+        axs2 = np.expand_dims(axs2, axis=0)
+        axs3 = np.expand_dims(axs3, axis=0)
+        axs4 = np.expand_dims(axs4, axis=0)
+        axs5 = np.expand_dims(axs5, axis=0)
+        axs6 = np.expand_dims(axs6, axis=0)
+        axs7 = np.expand_dims(axs7, axis=0)
+        
     slice_num = 0
     max_val = 5
     min_val = -5
@@ -430,7 +437,6 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
 
             if slice_num >= slices:
                 break
-
             im2 = axs2[j,k].imshow(pc_space_im[slice_num,:,:,0], vmax = max_val, vmin = min_val, origin = 'lower')
             axs2[j,k].set_title('Slice #' + str(slice_num), fontsize = 12)
             axs2[j,k].axis('off')
@@ -456,13 +462,18 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
             axs7[j,k].axis('off')
 
             slice_num = slice_num + 1
-    cbar1 = fig2.colorbar(im2, ax = axs2, orientation = 'horizontal')
-    cbar1.set_label('')
-    cbar2 = fig3.colorbar(im3, ax = axs3, orientation = 'horizontal')
-    cbar3 = fig4.colorbar(im4, ax = axs4, orientation = 'horizontal')
-    cbar4 = fig5.colorbar(im5, ax = axs5, orientation = 'horizontal')
-    cbar5 = fig6.colorbar(im6, ax = axs6, orientation = 'horizontal')
-    cbar6 = fig7.colorbar(im7, ax = axs7, orientation = 'horizontal')
+    cbar1 = fig2.colorbar(im2, ax = axs2, orientation = 'horizontal', fraction = 0.05)
+    cbar2 = fig3.colorbar(im3, ax = axs3, orientation = 'horizontal', fraction = 0.05)
+    cbar3 = fig4.colorbar(im4, ax = axs4, orientation = 'horizontal', fraction = 0.05)
+    cbar4 = fig5.colorbar(im5, ax = axs5, orientation = 'horizontal', fraction = 0.05)
+    cbar5 = fig6.colorbar(im6, ax = axs6, orientation = 'horizontal', fraction = 0.05)
+    cbar6 = fig7.colorbar(im7, ax = axs7, orientation = 'horizontal', fraction = 0.05)
+    cbar1.set_label('PC loading strength', fontsize = 12)
+    cbar2.set_label('PC loading strength', fontsize = 12)
+    cbar3.set_label('PC loading strength', fontsize = 12)
+    cbar4.set_label('PC loading strength', fontsize = 12)
+    cbar5.set_label('PC loading strength', fontsize = 12)
+    cbar6.set_label('PC loading strength', fontsize = 12)
 
     return fig1, fig2, fig3, fig4, fig5, fig6, fig7
 
@@ -482,7 +493,7 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
     if longitudinal_csv is not None:
         
         #read provided csv
-        longitudinal_df = pd.read_csv(longitudinal_csv)
+        longitudinal_df = pd.read_csv(longitudinal_csv).reset_index(drop=True)
         
         #check that the provided csv has the proper headings - if not, raise error
         if longitudinal_df.axes[1].values.tolist() != csv_header:
@@ -494,20 +505,21 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
         
         #convert_to_csv
         num_ses = len(longitudinal_df)
-        longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv")
+        longitudinal_df = longitudinal_df.reset_index(drop=True)
+        longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv", index = False)
                                
-    #plot the results across sessions
-    fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
-    fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
+        #plot the results across sessions
+        fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
+        fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
 
-    for i in range(0, len(csv_header)):                           
-        axs[i].set_title(csv_header[i], fontsize = 15)
-        axs[i].plot(longitudinal_df[csv_header[i]], 'o-')
-        axs[i].set_xlabel('Session number', fontsize = 15)
-        axs[i].set_title(csv_header[i], fontsize = 15)
-    fig.tight_layout()
-    
-    return fig
+        for i in range(0, len(csv_header)):                           
+            axs[i].set_title(csv_header[i], fontsize = 15)
+            axs[i].plot(longitudinal_df[csv_header[i]], 'o-')
+            axs[i].set_xlabel('Session number', fontsize = 15)
+            axs[i].set_title(csv_header[i], fontsize = 15)
+        fig.tight_layout()
+
+        return fig
 
 def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width,
                  longitudinal_csv):
@@ -542,7 +554,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
 
     #perform whole phantom analysis
     [figure_voxelwise_wholephantom, signal_image, sfnr_image,
-     static_spatial_noise_im, agar_epi_flat_detrended] = voxelwise_wholephantom_analysis(agar_epi, roi, time_arr,
+     static_spatial_noise_im, agar_epi_flat_detrended, slice_num] = voxelwise_wholephantom_analysis(agar_epi, roi, time_arr,
                                                                                          slice_to_plot, slices, PE_matrix_size,
                                                                                          FE_matrix_size, num_rep)
 
@@ -551,7 +563,7 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
      drift_alt, value_of_peak] = roi_residuals_analysis(agar_epi, roi, time_arr, signal_image, sfnr_image,
                                                       static_spatial_noise_im, TR, num_rep)
     #perform ghosting analysis
-    figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy)
+    figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy, slice_num)
     
     #perform weisskoff analysis
     [rdc, figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
