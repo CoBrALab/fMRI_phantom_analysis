@@ -29,10 +29,11 @@ plt.rc('axes', labelsize=15)
 input_epi=os.path.abspath(sys.argv[1])
 output_path=os.path.abspath(sys.argv[2])
 TR=ast.literal_eval(sys.argv[3])
-input_roi=sys.argv[4]
-desired_slice=ast.literal_eval(sys.argv[5])
-weisskoff_max_roi_width=ast.literal_eval(sys.argv[6])
-longitudinal_csv=os.path.abspath(sys.argv[7])
+roi_size=ast.literal_eval(sys.argv[4])
+input_roi=sys.argv[5]
+desired_slice=ast.literal_eval(sys.argv[6])
+weisskoff_max_roi_width=ast.literal_eval(sys.argv[7])
+longitudinal_csv=os.path.abspath(sys.argv[8])
 
 if input_roi == 'None':
     input_roi = None
@@ -531,7 +532,7 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
 
         return fig
 
-def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width,
+def full_analysis(phantom_epi_filepath, roi_size, roi_filepath, output_filepath, slice_to_plot, TR, weisskoff_max_roi_width,
                  longitudinal_csv):
 
     #load the images, then convert them to arrays
@@ -553,9 +554,9 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
     rep_arr = np.linspace(0, num_rep_no_dummy-1, num_rep_no_dummy)
     time_arr = np.divide(rep_arr, TR)
 
-    #if there is no manually drawn roi provided, extract a 10x10, one-slice roi from the middle slice
+    #if there is no manually drawn roi provided, extract a roi_size x roi_size, one-slice roi from the middle slice
     if roi_filepath is None:
-        roi = extract_an_roi(slices, PE_matrix_size, FE_matrix_size,10)
+        roi = extract_an_roi(slices, PE_matrix_size, FE_matrix_size,roi_size)
     else:
         #Deals with MINC ROIS
         roi_image = sitk.ReadImage(roi_filepath)
@@ -611,4 +612,4 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
 
 # # Call the function
 
-full_analysis(input_epi, input_roi, output_path, desired_slice, TR, weisskoff_max_roi_width, longitudinal_csv)
+full_analysis(input_epi, roi_size, input_roi, output_path, desired_slice, TR, weisskoff_max_roi_width, longitudinal_csv)

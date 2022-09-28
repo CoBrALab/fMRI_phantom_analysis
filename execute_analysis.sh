@@ -3,6 +3,7 @@
 # ARG_POSITIONAL_SINGLE([input_epi],[The phantom fMRI timeseries, as a 4D nifti.],[])
 # ARG_OPTIONAL_SINGLE([output_path],[],[Prefix to the pdf and csv output files. Must not already exist.],[./fMRI_stability_report])
 # ARG_OPTIONAL_SINGLE([repetition_time],[],[The acquisition TR, in seconds.],[1.0])
+# ARG_OPTIONAL_SINGLE([roi_width],[],[Width of the ROI in which mean metric values are extracted, in voxels.],[10])
 # ARG_OPTIONAL_SINGLE([input_roi],[],[A manually drawn single-slice ROI, as a 3D nifti. A 10x10 ROI in the center slice is used by default.],[None])
 # ARG_OPTIONAL_SINGLE([desired_slice],[],[The slice to be plotted in the report, as an integer. Center slice is computed and used by default.],[None])
 # ARG_OPTIONAL_SINGLE([weisskoff_max_roi_width],[],[The width of the largest ROI that is analyzed during Weisskoff analysis, in pixels. It should be as large as possible without extending outside the phantom],[20])
@@ -37,6 +38,7 @@ _positionals=()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_output_path="./fMRI_stability_report"
 _arg_repetition_time="1.0"
+_arg_roi_width="10"
 _arg_input_roi="None"
 _arg_desired_slice="None"
 _arg_weisskoff_max_roi_width="20"
@@ -46,10 +48,11 @@ _arg_longitudinal_csv="None"
 print_help()
 {
 	printf '%s\n' "This script performs a temporal stability analysis of an fMRI timeseries acquired using a phantom. The outputs aid in the diagnosis of issues with scanner stability."
-	printf 'Usage: %s [--output_path <arg>] [--repetition_time <arg>] [--input_roi <arg>] [--desired_slice <arg>] [--weisskoff_max_roi_width <arg>] [--longitudinal_csv <arg>] [-h|--help] <input_epi>\n' "$0"
+	printf 'Usage: %s [--output_path <arg>] [--repetition_time <arg>] [--roi_width <arg>] [--input_roi <arg>] [--desired_slice <arg>] [--weisskoff_max_roi_width <arg>] [--longitudinal_csv <arg>] [-h|--help] <input_epi>\n' "$0"
 	printf '\t%s\n' "<input_epi>: The phantom fMRI timeseries, as a 4D nifti."
 	printf '\t%s\n' "--output_path: Prefix to the pdf and csv output files. Must not already exist. (default: './fMRI_stability_report')"
 	printf '\t%s\n' "--repetition_time: The acquisition TR, in seconds. (default: '1.0')"
+	printf '\t%s\n' "--roi_width: Width of the ROI in which mean metric values are extracted, in voxels. (default: '10')"
 	printf '\t%s\n' "--input_roi: A manually drawn single-slice ROI, as a 3D nifti. A 10x10 ROI in the center slice is used by default. (default: 'None')"
 	printf '\t%s\n' "--desired_slice: The slice to be plotted in the report, as an integer. Center slice is computed and used by default. (default: 'None')"
 	printf '\t%s\n' "--weisskoff_max_roi_width: The width of the largest ROI that is analyzed during Weisskoff analysis, in pixels. It should be as large as possible without extending outside the phantom (default: '20')"
@@ -80,6 +83,14 @@ parse_commandline()
 				;;
 			--repetition_time=*)
 				_arg_repetition_time="${_key##--repetition_time=}"
+				;;
+			--roi_width)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_roi_width="$2"
+				shift
+				;;
+			--roi_width=*)
+				_arg_roi_width="${_key##--roi_width=}"
 				;;
 			--input_roi)
 				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
@@ -189,6 +200,6 @@ case "$0" in
 esac
 scriptdir="${scriptdir%/*}"
 
-python3.8 $scriptdir/phantom_analysis_functions.py $_arg_input_epi $output_path_prefix $_arg_repetition_time $_arg_input_roi $_arg_desired_slice $_arg_weisskoff_max_roi_width $_arg_longitudinal_csv
+python3.8 $scriptdir/phantom_analysis_functions.py $_arg_input_epi $output_path_prefix $_arg_repetition_time $_arg_roi_width $_arg_input_roi $_arg_desired_slice $_arg_weisskoff_max_roi_width $_arg_longitudinal_csv
 
 # ] <-- needed because of Argbash
