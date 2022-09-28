@@ -192,22 +192,23 @@ def voxelwise_wholephantom_analysis(phantom_epi, roi_to_plot, time, slice_num, s
     fig.tight_layout()
 
 
-    return fig, signal_image, sfnr_image, static_spatial_noise_im, phantom_epi_flat_detrended, slice_num
+    return fig, signal_image, temp_fluc_noise_image, sfnr_image, static_spatial_noise_im, phantom_epi_flat_detrended, slice_num
 
 
-def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, static_spatial_noise_im, TR, num_rep):
+def roi_residuals_analysis(phantom_epi, roi, time, signal_image, temp_fluc_noise_image, sfnr_image, static_spatial_noise_im, TR, num_rep_no_dummy):
     residuals_in_roi, predicted_roi, phantom_epi_roi_mean,tmp = extract_residuals(phantom_epi, roi, time, 0,0,0)
 
     ###################################### CALC METRICS WITHIN ROI #######################################3
     signal_summary_value = np.mean(signal_image[roi.astype(bool)])
+    std_summary_value = np.mean(temp_fluc_noise_image[roi.astype(bool)])
     sfnr_summary_value = np.mean(sfnr_image[roi.astype(bool)])
     intrinsic_noise = np.var(static_spatial_noise_im[roi.astype(bool)])
-    snr = signal_summary_value/np.sqrt(intrinsic_noise/355)
+    snr = signal_summary_value/np.sqrt(intrinsic_noise/num_rep_no_dummy)
 
     percent_fluc = 100*np.std(residuals_in_roi)/np.mean(phantom_epi_roi_mean)
     diff = max(predicted_roi)- min(predicted_roi)
-    drift = 100*diff/np.mean(phantom_epi_roi_mean) #not sure if this is right
-    drift_alt = 100*diff/signal_summary_value
+    driftfit = 100*diff/np.mean(phantom_epi_roi_mean)
+    drift = 100*(max(phantom_epi_roi_mean) - min(phantom_epi_roi_mean))/np.mean(phantom_epi_roi_mean)
 
     ####################################### Fourier Analysis ####################################################
     N = phantom_epi.shape[0] #length
@@ -242,15 +243,18 @@ def roi_residuals_analysis(phantom_epi, roi, time, signal_image, sfnr_image, sta
     axs[3].set_xlabel('Residual intensity', fontsize = 15)
     axs[3].set_ylabel('Frequency', fontsize = 15)
     stats.probplot(residuals_in_roi, plot=axs[4])
-    fig0.text(0,-0.1, "The strongest frequency in the FFT spectrum is: " + str(value_of_peak[0][0]) + ' Hz', fontsize = 15)
-    fig0.text(0,-0.2, "The drift (inside roi) is: " + str(drift_alt), fontsize = 15)
-    fig0.text(0,-0.3, "The percent fluctuation (inside roi) is: " + str(percent_fluc), fontsize = 15)
-    fig0.text(0,-0.4, "The SFNR summary value (inside roi) is: " + str(sfnr_summary_value), fontsize = 15)
-    fig0.text(0,-0.5, "The SNR summary value (inside roi) is: " + str(snr), fontsize = 15)
-    fig0.text(0,-0.6,'QQ Correlation of residuals: '+str(r), fontsize = 15)
+    fig0.text(0,-0.1, "The mean signal (inside roi) is: " + str(signal_summary_value), fontsize = 15)
+    fig0.text(0,-0.2, "The temporal std (inside roi) is: " + str(std_summary_value), fontsize = 15)
+    fig0.text(0,-0.3, "The tSNR summary value (inside roi) is: " + str(sfnr_summary_value), fontsize = 15)
+    fig0.text(0,-0.4, "The SNR summary value (inside roi) is: " + str(snr), fontsize = 15)
+    fig0.text(0,-0.5, "The drift (inside roi) is: " + str(drift), fontsize = 15)
+    fig0.text(0,-0.6, "The drift of the fit (inside roi) is: " + str(driftfit), fontsize = 15)
+    fig0.text(0,-0.7, "The percent fluctuation (inside roi) is: " + str(percent_fluc), fontsize = 15)
+    fig0.text(0,-0.8, "The strongest frequency in the FFT spectrum is: " + str(value_of_peak[0][0]) + ' Hz', fontsize = 15)
+    fig0.text(0,-0.9,'QQ Correlation of residuals: '+str(r), fontsize = 15)
     fig0.tight_layout()
 
-    return fig0, sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak
+    return fig0, signal_summary_value, std_summary_value, sfnr_summary_value, snr, drift, driftfit, percent_fluc, value_of_peak, r
 
 def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy, slice_to_plot):
     
@@ -279,13 +283,13 @@ def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy, s
         epi_background_image = np.multiply(phantom_epi[i,:,:,:], background_mask_eroded)
         ratio_ghosting_per_rep[i] = np.divide(epi_ghosting_image[epi_ghosting_image != 0.00].mean(), 
                                               epi_background_image[epi_background_image != 0.00].mean())
-    
+    mean_ghost = np.mean(ratio_ghosting_per_rep)
     fig1, axs = plt.subplots(1, 4, figsize = (15,4))
     fig1.suptitle('Ghosting Analysis', y = 1, fontsize = 15)
     plot = axs[0].plot(time_arr, ratio_ghosting_per_rep)
-    axs[0].set_xlabel('Repetition (#)')
-    axs[0].set_ylabel('Ghost to Background Intensities')
-    axs[0].set_title('Ghosting Level across time')
+    axs[0].set_xlabel('Repetition (#)', fontsize = 12)
+    axs[0].set_ylabel('Ghost to Background Intensities', fontsize = 12)
+    axs[0].set_title('Ghosting Level across time, (mean = ' + str(mean_ghost) + ')', fontsize = 15)
     
     toplot = phantom_epi[int(len(time_arr)/2), slice_to_plot,:,:] + 500*ghost_mask[slice_to_plot,:,:]
     im1 = axs[1].imshow(toplot, origin = 'lower')
@@ -306,7 +310,7 @@ def ghosting_analysis(phantom_epi, time_arr, PE_matrix_size, num_rep_no_dummy, s
     axs[3].axis('off')
   
     
-    return fig1
+    return fig1, mean_ghost
 
 def weisskoff_analysis(phantom_epi, time, slices, PE_matrix_size, FE_matrix_size, num_rep_no_dummy, max_roi_width):
     
@@ -474,15 +478,21 @@ def pca_analysis(agar_epi_flat_detrended, time, slices, PE_matrix_size, FE_matri
     cbar4.set_label('PC loading strength', fontsize = 12)
     cbar5.set_label('PC loading strength', fontsize = 12)
     cbar6.set_label('PC loading strength', fontsize = 12)
+    cbar1.ax.tick_params(labelsize=12)
+    cbar2.ax.tick_params(labelsize=12)
+    cbar3.ax.tick_params(labelsize=12)
+    cbar4.ax.tick_params(labelsize=12)
+    cbar5.ax.tick_params(labelsize=12)
+    cbar6.ax.tick_params(labelsize=12)
 
     return fig1, fig2, fig3, fig4, fig5, fig6, fig7
 
 def export_csv(csv_metrics, output_filepath, longitudinal_csv):
     
     #define header
-    csv_header = ["SFNR summary value", "SNR summary value", "Percent fluctuation", "Drift", "Peak Fourier frequency",
-                   "Weisskoff radius of decorrelation"]
-        
+    csv_header = ["Mean signal", "Temporal standard deviation", "tSNR", "SNR", "Drift", "Drift of fit", "Percent fluctuation", "Peak Fourier frequency",
+                   "QQ correlation", "Mean ghost", "Weisskoff radius of decorrelation"]
+
     #create a clean csv with just this session's data
     with open(output_filepath + ".csv", 'w', newline="") as csv_file:
         csv_writer = csv.writer(csv_file)
@@ -509,8 +519,8 @@ def export_csv(csv_metrics, output_filepath, longitudinal_csv):
         longitudinal_df.to_csv(output_filepath + "-" + str(num_ses)  + "_multisession.csv", index = False)
                                
         #plot the results across sessions
-        fig, axs = plt.subplots(len(csv_header),1, figsize = (15,30), sharey = True)
-        fig.suptitle('Stability metrics across sessions', y = 0.7, fontsize = 15)
+        fig, axs = plt.subplots(len(csv_header),1, figsize = (15,19), sharex = True)
+        fig.suptitle('Stability metrics across sessions', fontsize = 15)
 
         for i in range(0, len(csv_header)):                           
             axs[i].set_title(csv_header[i], fontsize = 15)
@@ -553,17 +563,17 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
         roi = roi.swapaxes(0,1)
 
     #perform whole phantom analysis
-    [figure_voxelwise_wholephantom, signal_image, sfnr_image,
+    [figure_voxelwise_wholephantom, signal_image, std_image, sfnr_image,
      static_spatial_noise_im, agar_epi_flat_detrended, slice_num] = voxelwise_wholephantom_analysis(agar_epi, roi, time_arr,
                                                                                          slice_to_plot, slices, PE_matrix_size,
                                                                                          FE_matrix_size, num_rep)
 
     #perform within roi analysis
-    [figure_roi_analysis, sfnr_summary_value, snr, percent_fluc,
-     drift_alt, value_of_peak] = roi_residuals_analysis(agar_epi, roi, time_arr, signal_image, sfnr_image,
+    [figure_roi_analysis, signal_summary_value, std_summary_value, sfnr_summary_value, snr,
+     drift, driftfit, percent_fluc, value_of_peak, r] = roi_residuals_analysis(agar_epi, roi, time_arr, signal_image, std_image, sfnr_image,
                                                       static_spatial_noise_im, TR, num_rep)
     #perform ghosting analysis
-    figure_ghosting_analysis = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy, slice_num)
+    figure_ghosting_analysis, mean_ghost = ghosting_analysis(agar_epi, time_arr, PE_matrix_size, num_rep_no_dummy, slice_num)
     
     #perform weisskoff analysis
     [rdc, figure_weisskoff_roi_positions, figure_weisskoff_rdc] = weisskoff_analysis(agar_epi, time_arr, slices,PE_matrix_size,
@@ -576,7 +586,8 @@ def full_analysis(phantom_epi_filepath, roi_filepath, output_filepath, slice_to_
                                                                            PE_matrix_size, FE_matrix_size, num_rep, TR)
        
     #export csv
-    csv_metrics = [sfnr_summary_value, snr, percent_fluc, drift_alt, value_of_peak[0][0], rdc]
+    csv_metrics = [signal_summary_value, std_summary_value, sfnr_summary_value, snr,
+                    drift, driftfit, percent_fluc, value_of_peak[0][0], r, mean_ghost, rdc]
     figure_longitudinal_metrics = export_csv(csv_metrics, output_filepath, longitudinal_csv)
 
     #export all figures to pdf
